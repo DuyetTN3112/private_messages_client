@@ -4,7 +4,7 @@ import { io } from 'socket.io-client';
 import './assets/animations.css';
 
 // Tạo kết nối socket
-const socket = io('http://localhost:3000');
+const socket = io(import.meta.env.VITE_SOCKET_URL);
 
 // Tạo app Vue
 const app = createApp(App);
