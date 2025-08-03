@@ -1,6 +1,6 @@
 <template>
-  <!-- Main container -->
-  <div style="background: #000000; min-height: 100vh; position: relative; overflow: hidden;">
+  <!-- Main container - Full screen black background -->
+  <div style="background: #000000; min-height: 100vh; width: 100vw; position: fixed; top: 0; left: 0; overflow: hidden;">
     <!-- Background elements -->
     <Background />
 
@@ -142,39 +142,16 @@ const showReactionPicker = (msg: Message) => {
   reactionPickerMessage.value = msg;
 };
 
-// Add reaction to message
+// Add reaction to message - Fixed logic to handle multiple users
 const addReaction = (msg: Message, emoji: string) => {
-  // Đảm bảo tin nhắn có mảng reactions
-  if (!msg.reactions) {
-    msg.reactions = [];
-  }
-  
-  const hasReaction = msg.reactions.includes(emoji);
-  
-  if (hasReaction) {
-    msg.reactions = msg.reactions.filter((r: string) => r !== emoji);
-  } else {
-    msg.reactions.push(emoji);
-  }
-  
-  // Cập nhật trực tiếp vào mảng messages để hiển thị ngay lập tức
+  // Tìm index của tin nhắn
   const msgIndex = messages.indexOf(msg);
-  if (msgIndex !== -1) {
-    if (!messages[msgIndex].reactions) {
-      messages[msgIndex].reactions = [];
-    }
-    
-    if (messages[msgIndex].reactions.includes(emoji)) {
-      messages[msgIndex].reactions = messages[msgIndex].reactions.filter((r: string) => r !== emoji);
-    } else {
-      messages[msgIndex].reactions.push(emoji);
-    }
-  }
   
   // Hide picker after selecting
   reactionPickerMessage.value = null;
   
-  // Add socket emit for syncing reactions across users
+  // Chỉ gửi socket emit, không cập nhật local state ở đây
+  // Để server xử lý và gửi lại cho tất cả clients (kể cả người gửi)
   socket.emit('add-reaction', { 
     conversation_id: conversation_id.value,
     message_index: msgIndex,
@@ -275,7 +252,7 @@ onMounted(() => {
     scrollToBottom();
   });
   
-  // Xử lý phản ứng từ người dùng khác
+  // Xử lý phản ứng từ người dùng khác - Fixed to add not toggle
   socket.on('receive-reaction', (data: {message_index: number, emoji: string}) => {
     const { message_index, emoji } = data;
     
@@ -284,15 +261,8 @@ onMounted(() => {
         messages[message_index].reactions = [];
       }
       
-      const hasReaction = messages[message_index].reactions.includes(emoji);
-      
-      if (hasReaction) {
-        // Nếu reaction đã tồn tại, xóa đi
-        messages[message_index].reactions = messages[message_index].reactions.filter((r: string) => r !== emoji);
-      } else {
-        // Nếu reaction chưa tồn tại, thêm vào
-        messages[message_index].reactions.push(emoji);
-      }
+      // Thêm reaction mới (không toggle)
+      messages[message_index].reactions.push(emoji);
       
       // Hiển thị thông báo nhỏ khi có người thả cảm xúc vào tin nhắn của mình
       if (messages[message_index].sender_id === socket_id.value) {
@@ -327,4 +297,4 @@ onUnmounted(() => {
   // Ngắt kết nối socket khi component bị hủy
   socket.disconnect();
 });
-</script> 
+</script>

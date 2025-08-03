@@ -43,20 +43,9 @@
             })
         }"
       >
-        <!-- Message content -->
+        <!-- Message content - REMOVED reactions display from here -->
         <p style="white-space: pre-wrap; line-height: 1.5; font-size: 0.875rem; word-break: break-word;">
           <span v-html="formattedContent"></span>
-          
-          <!-- Hiển thị phản ứng ngay trong nội dung tin nhắn nếu có -->
-          <span v-if="message.reactions && message.reactions.length > 0" 
-            style="
-              display: inline-block;
-              margin-left: 0.5rem;
-              font-size: 0.875rem;
-            "
-          >
-            {{ message.reactions.join(' ') }}
-          </span>
         </p>
         
         <!-- Reaction button icon -->
@@ -91,9 +80,9 @@
         </button>
       </div>
 
-      <!-- Reactions Display -->
+      <!-- Reactions Display - Show reaction count with emoji -->
       <div 
-        v-if="message.reactions && message.reactions.length > 0" 
+        v-if="reactionCounts && Object.keys(reactionCounts).length > 0" 
         :style="{
           display: 'flex', 
           gap: '0.25rem', 
@@ -105,15 +94,15 @@
         }"
       >
         <div
-          v-for="(reaction, idx) in message.reactions"
-          :key="idx"
-          @click="$emit('addReaction', message, reaction)"
+          v-for="(count, emoji) in reactionCounts"
+          :key="emoji"
+          @click="$emit('addReaction', message, emoji)"
           style="
             background: rgba(0, 0, 0, 0.5); 
             backdrop-filter: blur(0.5rem); 
             border-radius: 9999px; 
-            padding: 0.25rem 0.4rem; 
-            font-size: 1rem; 
+            padding: 0.25rem 0.5rem; 
+            font-size: 0.875rem; 
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             transition: all 0.2s;
@@ -121,12 +110,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            gap: 0.25rem;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             animation: fadeIn 0.3s ease-in-out;
           "
           class="hover-scale"
         >
-          {{ reaction }}
+          <span>{{ emoji }}</span>
+          <span style="font-size: 0.75rem; opacity: 0.8;">{{ count }}</span>
         </div>
       </div>
     </div>
@@ -184,4 +175,18 @@ const formattedContent = computed(() => {
     return `<a href="${url}" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: underline; display: inline-block; max-width: 100%; overflow-wrap: break-word; word-break: break-all;">${url}</a>`;
   });
 });
-</script> 
+
+// Tính toán số lượng reactions
+const reactionCounts = computed(() => {
+  if (!props.message.reactions || props.message.reactions.length === 0) {
+    return {};
+  }
+  
+  const counts: Record<string, number> = {};
+  props.message.reactions.forEach(emoji => {
+    counts[emoji] = (counts[emoji] || 0) + 1;
+  });
+  
+  return counts;
+});
+</script>
